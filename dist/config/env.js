@@ -19,6 +19,7 @@ const envSchema = zod_1.z.object({
     TWILIO_AUTH_TOKEN: zod_1.z.string().min(1),
     TWILIO_VOICE_WEBHOOK_PATH: zod_1.z.string().default('/twilio/voice'),
     TWILIO_STATUS_WEBHOOK_PATH: zod_1.z.string().default('/twilio/status'),
+    STT_PROVIDER: zod_1.z.enum(['deepgram', 'openai']).default('deepgram'),
     DEEPGRAM_API_KEY: zod_1.z.string().min(1),
     ELEVEN_API_KEY: zod_1.z.string().min(1),
     ELEVEN_VOICE_ID: zod_1.z.string().min(1),

@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.VoiceOrchestrator = void 0;
 const deepgramService_1 = __importDefault(require("./deepgramService"));
+const openaiSttService_1 = __importDefault(require("./openaiSttService"));
 const elevenlabsService_1 = __importDefault(require("./elevenlabsService"));
 const aiAgent_1 = __importDefault(require("./aiAgent"));
 const sessionManager_1 = __importDefault(require("./sessionManager"));
@@ -15,14 +16,14 @@ const env_1 = __importDefault(require("../config/env"));
 class VoiceOrchestrator {
     twilioWs;
     callSid;
-    deepgram;
+    sttService;
     session = null;
     streamSid = null;
     transcriptBuffer = '';
     isSpeaking = false;
     utteranceTimeout = null;
     hasGreeted = false;
-    deepgramReady = false;
+    sttReady = false;
     pendingAudio = [];
     updateStreamSid(possibleSid) {
         if (possibleSid && possibleSid !== this.streamSid) {
@@ -33,40 +34,47 @@ class VoiceOrchestrator {
     constructor(twilioWs, callSid) {
         this.twilioWs = twilioWs;
         this.callSid = callSid;
-        this.deepgram = new deepgramService_1.default();
+        if (env_1.default.STT_PROVIDER === 'openai') {
+            logger_1.default.info({ callSid }, 'Using OpenAI STT provider');
+            this.sttService = new openaiSttService_1.default();
+        }
+        else {
+            logger_1.default.info({ callSid }, 'Using Deepgram STT provider');
+            this.sttService = new deepgramService_1.default();
+        }
     }
     async start(phone) {
         try {
             this.session = await sessionManager_1.default.createSession(this.callSid, phone);
             await sessionManager_1.default.addConversationMessage(this.callSid, 'system', 'Call started');
-            await this.deepgram.startTranscription();
-            this.deepgram.on('transcript', (transcript) => {
+            await this.sttService.startTranscription();
+            this.sttService.on('transcript', (transcript) => {
                 this.handleTranscript(transcript);
             });
-            this.deepgram.on('utteranceEnd', () => {
+            this.sttService.on('utteranceEnd', () => {
                 this.handleUtteranceEnd();
             });
-            this.deepgram.on('ready', () => {
-                this.deepgramReady = true;
+            this.sttService.on('ready', () => {
+                this.sttReady = true;
                 if (this.pendingAudio.length) {
-                    logger_1.default.debug({ callSid: this.callSid, bufferedChunks: this.pendingAudio.length }, 'Flushing buffered audio to Deepgram');
+                    logger_1.default.debug({ callSid: this.callSid, bufferedChunks: this.pendingAudio.length }, `Flushing buffered audio to ${env_1.default.STT_PROVIDER} STT`);
                 }
                 while (this.pendingAudio.length) {
                     const chunk = this.pendingAudio.shift();
                     if (chunk) {
-                        this.deepgram.sendAudio(chunk);
+                        this.sttService.sendAudio(chunk);
                     }
                 }
             });
-            this.deepgram.on('close', () => {
-                this.deepgramReady = false;
+            this.sttService.on('close', () => {
+                this.sttReady = false;
                 this.pendingAudio = [];
             });
-            this.deepgram.on('error', (error) => {
+            this.sttService.on('error', (error) => {
                 logger_1.default.error({
                     callSid: this.callSid,
                     error: error?.message ?? error,
-                }, 'Deepgram error');
+                }, `${env_1.default.STT_PROVIDER} STT error`);
             });
             this.twilioWs.on('close', () => {
                 this.handleCallEnd();
@@ -99,8 +107,8 @@ class VoiceOrchestrator {
                     this.updateStreamSid(msg.streamSid);
                     if (msg.media?.payload) {
                         const audioBuffer = Buffer.from(msg.media.payload, 'base64');
-                        if (this.deepgramReady) {
-                            this.deepgram.sendAudio(audioBuffer);
+                        if (this.sttReady) {
+                            this.sttService.sendAudio(audioBuffer);
                         }
                         else {
                             this.pendingAudio.push(audioBuffer);
@@ -302,8 +310,8 @@ class VoiceOrchestrator {
     }
     async handleCallEnd() {
         logger_1.default.info({ callSid: this.callSid }, 'Call ended');
-        this.deepgram.close();
-        this.deepgramReady = false;
+        this.sttService.close();
+        this.sttReady = false;
         this.pendingAudio = [];
         this.isSpeaking = false;
         if (this.session && this.session.items.length === 0) {

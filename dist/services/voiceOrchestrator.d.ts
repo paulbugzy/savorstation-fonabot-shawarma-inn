@@ -2,14 +2,14 @@ import { WebSocket } from 'ws';
 export declare class VoiceOrchestrator {
     private twilioWs;
     private callSid;
-    private deepgram;
+    private sttService;
     private session;
     private streamSid;
     private transcriptBuffer;
     private isSpeaking;
     private utteranceTimeout;
     private hasGreeted;
-    private deepgramReady;
+    private sttReady;
     private pendingAudio;
     private updateStreamSid;
     constructor(twilioWs: WebSocket, callSid: string);

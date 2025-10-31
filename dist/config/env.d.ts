@@ -12,6 +12,7 @@ declare const envSchema: z.ZodObject<{
     TWILIO_AUTH_TOKEN: z.ZodString;
     TWILIO_VOICE_WEBHOOK_PATH: z.ZodDefault<z.ZodString>;
     TWILIO_STATUS_WEBHOOK_PATH: z.ZodDefault<z.ZodString>;
+    STT_PROVIDER: z.ZodDefault<z.ZodEnum<["deepgram", "openai"]>>;
     DEEPGRAM_API_KEY: z.ZodString;
     ELEVEN_API_KEY: z.ZodString;
     ELEVEN_VOICE_ID: z.ZodString;
@@ -36,6 +37,7 @@ declare const envSchema: z.ZodObject<{
     TWILIO_AUTH_TOKEN: string;
     TWILIO_VOICE_WEBHOOK_PATH: string;
     TWILIO_STATUS_WEBHOOK_PATH: string;
+    STT_PROVIDER: "deepgram" | "openai";
     DEEPGRAM_API_KEY: string;
     ELEVEN_API_KEY: string;
     ELEVEN_VOICE_ID: string;
@@ -70,6 +72,7 @@ declare const envSchema: z.ZodObject<{
     POS_SOURCE?: string | undefined;
     TWILIO_VOICE_WEBHOOK_PATH?: string | undefined;
     TWILIO_STATUS_WEBHOOK_PATH?: string | undefined;
+    STT_PROVIDER?: "deepgram" | "openai" | undefined;
     REDIS_URL?: string | undefined;
 }>;
 export type Env = z.infer<typeof envSchema>;
