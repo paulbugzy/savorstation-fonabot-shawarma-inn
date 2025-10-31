@@ -1,0 +1,51 @@
+{
+  "name": "savorstation-voice-agent",
+  "version": "1.0.0",
+  "description": "Conversational AI phone ordering system for SavorStation",
+  "main": "dist/index.js",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc && tsc-alias",
+    "start": "node dist/index.js",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "dry-run": "tsx src/scripts/dryRunCreatePosOrder.ts",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\""
+  },
+  "keywords": ["voice", "ai", "twilio", "deepgram", "elevenlabs", "openai"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@deepgram/sdk": "^3.4.0",
+    "@supabase/supabase-js": "^2.39.7",
+    "axios": "^1.6.7",
+    "dotenv": "^16.4.5",
+    "elevenlabs": "^0.8.1",
+    "express": "^4.18.3",
+    "ioredis": "^5.3.2",
+    "openai": "^4.28.0",
+    "pino": "^8.19.0",
+    "pino-pretty": "^10.3.1",
+    "twilio": "^5.0.0",
+    "ws": "^8.16.0",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/jest": "^29.5.12",
+    "@types/node": "^20.11.24",
+    "@types/ws": "^8.5.10",
+    "@typescript-eslint/eslint-plugin": "^7.1.0",
+    "@typescript-eslint/parser": "^7.1.0",
+    "eslint": "^8.57.0",
+    "jest": "^29.7.0",
+    "prettier": "^3.2.5",
+    "ts-jest": "^29.1.2",
+    "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.8",
+    "tsx": "^4.7.1",
+    "typescript": "^5.3.3"
+  }
+}

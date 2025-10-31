@@ -1,0 +1,55 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-8080}:8080"
+    environment:
+      - NODE_ENV=${NODE_ENV:-production}
+      - PORT=${PORT:-8080}
+      - PUBLIC_URL=${PUBLIC_URL}
+      - BACKEND_BASE_URL=${BACKEND_BASE_URL}
+      - BACKEND_EMAIL=${BACKEND_EMAIL}
+      - BACKEND_PASSWORD=${BACKEND_PASSWORD}
+      - AI_ORDER_SOURCE=${AI_ORDER_SOURCE}
+      - POS_SOURCE=${POS_SOURCE}
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_VOICE_WEBHOOK_PATH=${TWILIO_VOICE_WEBHOOK_PATH}
+      - TWILIO_STATUS_WEBHOOK_PATH=${TWILIO_STATUS_WEBHOOK_PATH}
+      - DEEPGRAM_API_KEY=${DEEPGRAM_API_KEY}
+      - ELEVEN_API_KEY=${ELEVEN_API_KEY}
+      - ELEVEN_VOICE_ID=${ELEVEN_VOICE_ID}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379}
+      - MIX_API_KEY=${MIX_API_KEY}
+      - WEBHOOK_SHARED_SECRET=${WEBHOOK_SHARED_SECRET}
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY}
+    depends_on:
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+volumes:
+  redis-data:
