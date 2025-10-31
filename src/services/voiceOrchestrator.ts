@@ -1,5 +1,6 @@
 import { WebSocket } from 'ws';
 import DeepgramService from './deepgramService';
+import OpenAISttService from './openaiSttService';
 import elevenlabsService from './elevenlabsService';
 import aiAgent from './aiAgent';
 import sessionManager from './sessionManager';
@@ -8,18 +9,21 @@ import logger from '@/utils/logger';
 import { CallSession, OrderType, PosPaymentMethod } from '@/types';
 import { OrderReducer } from './orderReducer';
 import env from '@/config/env';
+import { EventEmitter } from 'events';
+
+type SttService = DeepgramService | OpenAISttService;
 
 export class VoiceOrchestrator {
   private twilioWs: WebSocket;
   private callSid: string;
-  private deepgram: DeepgramService;
+  private sttService: SttService;
   private session: CallSession | null = null;
   private streamSid: string | null = null;
   private transcriptBuffer: string = '';
   private isSpeaking: boolean = false;
   private utteranceTimeout: NodeJS.Timeout | null = null;
   private hasGreeted: boolean = false;
-  private deepgramReady: boolean = false;
+  private sttReady: boolean = false;
   private pendingAudio: Buffer[] = [];
 
   private updateStreamSid(possibleSid: string | undefined): void {
@@ -32,7 +36,14 @@ export class VoiceOrchestrator {
   constructor(twilioWs: WebSocket, callSid: string) {
     this.twilioWs = twilioWs;
     this.callSid = callSid;
-    this.deepgram = new DeepgramService();
+
+    if (env.STT_PROVIDER === 'openai') {
+      logger.info({ callSid }, 'Using OpenAI STT provider');
+      this.sttService = new OpenAISttService();
+    } else {
+      logger.info({ callSid }, 'Using Deepgram STT provider');
+      this.sttService = new DeepgramService();
+    }
   }
 
   async start(phone: string): Promise<void> {
@@ -44,44 +55,44 @@ export class VoiceOrchestrator {
         'Call started'
       );
 
-      await this.deepgram.startTranscription();
+      await this.sttService.startTranscription();
 
-      this.deepgram.on('transcript', (transcript: string) => {
+      this.sttService.on('transcript', (transcript: string) => {
         this.handleTranscript(transcript);
       });
 
-      this.deepgram.on('utteranceEnd', () => {
+      this.sttService.on('utteranceEnd', () => {
         this.handleUtteranceEnd();
       });
 
-      this.deepgram.on('ready', () => {
-        this.deepgramReady = true;
+      this.sttService.on('ready', () => {
+        this.sttReady = true;
         if (this.pendingAudio.length) {
           logger.debug(
             { callSid: this.callSid, bufferedChunks: this.pendingAudio.length },
-            'Flushing buffered audio to Deepgram'
+            `Flushing buffered audio to ${env.STT_PROVIDER} STT`
           );
         }
         while (this.pendingAudio.length) {
           const chunk = this.pendingAudio.shift();
           if (chunk) {
-            this.deepgram.sendAudio(chunk);
+            this.sttService.sendAudio(chunk);
           }
         }
       });
 
-      this.deepgram.on('close', () => {
-        this.deepgramReady = false;
+      this.sttService.on('close', () => {
+        this.sttReady = false;
         this.pendingAudio = [];
       });
 
-      this.deepgram.on('error', (error: any) => {
+      this.sttService.on('error', (error: any) => {
         logger.error(
           {
             callSid: this.callSid,
             error: error?.message ?? error,
           },
-          'Deepgram error'
+          `${env.STT_PROVIDER} STT error`
         );
       });
 
@@ -122,8 +133,8 @@ export class VoiceOrchestrator {
           this.updateStreamSid(msg.streamSid);
           if (msg.media?.payload) {
             const audioBuffer = Buffer.from(msg.media.payload, 'base64');
-            if (this.deepgramReady) {
-              this.deepgram.sendAudio(audioBuffer);
+            if (this.sttReady) {
+              this.sttService.sendAudio(audioBuffer);
             } else {
               this.pendingAudio.push(audioBuffer);
             }
@@ -390,8 +401,8 @@ export class VoiceOrchestrator {
   private async handleCallEnd(): Promise<void> {
     logger.info({ callSid: this.callSid }, 'Call ended');
 
-    this.deepgram.close();
-    this.deepgramReady = false;
+    this.sttService.close();
+    this.sttReady = false;
     this.pendingAudio = [];
     this.isSpeaking = false;
 
