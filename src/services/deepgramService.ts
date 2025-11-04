@@ -37,15 +37,19 @@ export class DeepgramService extends EventEmitter {
       this.connection.on('message', (data: WebSocket.Data) => {
         try {
           const message = JSON.parse(data.toString());
+          logger.info({ messageType: message.type, message }, 'Deepgram message received');
 
           if (message.type === 'Results') {
             const transcript = message.channel?.alternatives?.[0]?.transcript;
+            const isFinal = message.is_final;
+            logger.info({ transcript, isFinal, hasTranscript: !!transcript }, 'Transcript data');
+
             if (transcript && transcript.trim()) {
-              logger.debug({ transcript, isFinal: message.is_final }, 'Received transcript');
+              logger.info({ transcript, isFinal }, 'Emitting transcript');
               this.emit('transcript', transcript);
             }
           } else if (message.type === 'UtteranceEnd') {
-            logger.debug('Utterance ended');
+            logger.info('Utterance ended');
             this.emit('utteranceEnd');
           }
         } catch (err) {
@@ -78,6 +82,12 @@ export class DeepgramService extends EventEmitter {
   sendAudio(audioData: Buffer): void {
     if (this.connection && this.connection.readyState === WebSocket.OPEN) {
       this.connection.send(audioData);
+    } else {
+      logger.warn({
+        hasConnection: !!this.connection,
+        readyState: this.connection?.readyState,
+        expectedState: WebSocket.OPEN
+      }, 'Cannot send audio - connection not ready');
     }
   }
 
