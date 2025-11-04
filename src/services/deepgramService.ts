@@ -37,20 +37,13 @@ export class DeepgramService extends EventEmitter {
       this.connection.on('message', (data: WebSocket.Data) => {
         try {
           const message = JSON.parse(data.toString());
-          logger.info({ messageType: message.type, message }, 'Deepgram message received');
 
-          if (message.type === 'Results') {
-            const transcript = message.channel?.alternatives?.[0]?.transcript;
-            const isFinal = message.is_final;
-            logger.info({ transcript, isFinal, hasTranscript: !!transcript }, 'Transcript data');
-
-            if (transcript && transcript.trim()) {
-              logger.info({ transcript, isFinal }, 'Emitting transcript');
+          if (message.type === 'TurnInfo') {
+            if (message.event === 'EndOfTurn' && message.transcript && message.transcript.trim()) {
+              const transcript = message.transcript;
+              logger.info({ transcript, turnIndex: message.turn_index }, 'End of turn - emitting transcript');
               this.emit('transcript', transcript);
             }
-          } else if (message.type === 'UtteranceEnd') {
-            logger.info('Utterance ended');
-            this.emit('utteranceEnd');
           }
         } catch (err) {
           logger.error({ err, data: data.toString() }, 'Failed to parse Deepgram message');
