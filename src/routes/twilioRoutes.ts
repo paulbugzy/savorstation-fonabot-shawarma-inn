@@ -31,13 +31,6 @@ router.post(env.TWILIO_VOICE_WEBHOOK_PATH, validateTwilioRequest, (req: Request,
 
   const response = new twilio.twiml.VoiceResponse();
 
-  response.say(
-    {
-      voice: 'Polly.Joanna',
-    },
-    'Connecting you now, please wait.'
-  );
-
   const connect = response.connect();
   const stream = connect.stream({
     url: `wss://${env.PUBLIC_URL.replace(/^https?:\/\//, '')}/twilio/stream`,

@@ -212,6 +212,15 @@ export class VoiceOrchestrator {
       logger.error({ callSid: this.callSid }, 'Session not found after adding message');
       return;
     }
+
+    logger.info(
+      {
+        callSid: this.callSid,
+        conversationHistoryLength: freshSession.conversationHistory.length,
+      },
+      'Refreshed session from database'
+    );
+
     this.session = freshSession;
 
     try {

@@ -132,6 +132,15 @@ class SessionManager {
       timestamp: new Date().toISOString(),
     });
 
+    logger.debug(
+      {
+        callSid,
+        role,
+        conversationHistoryLength: session.conversationHistory.length,
+      },
+      'Adding conversation message'
+    );
+
     await this.updateSession(callSid, { conversationHistory: session.conversationHistory });
   }
 
