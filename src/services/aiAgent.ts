@@ -51,6 +51,15 @@ export class AIAgent {
   ): Promise<{ response: string; updates: any[] }> {
     const messages = this.buildMessages(session, userMessage);
 
+    logger.info({
+      callSid: session.callSid,
+      messageCount: messages.length,
+      hasOrderType: !!session.orderType,
+      hasBranch: !!session.branchId,
+      hasCustomer: !!session.customerId,
+      itemCount: session.items.length
+    }, 'Sending request to OpenAI');
+
     try {
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o',
@@ -60,6 +69,13 @@ export class AIAgent {
         temperature: 0.7,
         max_tokens: 500,
       });
+
+      logger.info({
+        callSid: session.callSid,
+        hasToolCalls: !!completion.choices[0].message.tool_calls,
+        toolCallCount: completion.choices[0].message.tool_calls?.length || 0,
+        finishReason: completion.choices[0].finish_reason
+      }, 'Received OpenAI response');
 
       const choice = completion.choices[0];
       const updates: any[] = [];

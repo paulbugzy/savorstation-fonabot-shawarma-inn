@@ -162,7 +162,15 @@ export class VoiceOrchestrator {
 
   private handleTranscript(transcript: string): void {
     if (this.isSpeaking) {
-      return;
+      logger.info({ callSid: this.callSid, transcript }, 'User interrupted - stopping speech');
+      this.isSpeaking = false;
+      if (this.streamSid) {
+        const clearMessage = JSON.stringify({
+          event: 'clear',
+          streamSid: this.streamSid,
+        });
+        this.twilioWs.send(clearMessage);
+      }
     }
 
     this.transcriptBuffer += ' ' + transcript;
@@ -203,6 +211,8 @@ export class VoiceOrchestrator {
         this.session,
         userMessage
       );
+
+      logger.info({ callSid: this.callSid, response, updateCount: updates.length }, 'AI response generated');
 
       for (const update of updates) {
         this.session = await this.applyUpdate(update);
