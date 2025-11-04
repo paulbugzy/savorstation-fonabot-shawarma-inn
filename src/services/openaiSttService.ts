@@ -35,13 +35,15 @@ export class OpenAISttService extends EventEmitter {
 
   sendAudio(audioData: Buffer): void {
     this.audioBuffer.push(audioData);
+    const totalLength = this.audioBuffer.reduce((sum, buf) => sum + buf.length, 0);
+    logger.debug({ bufferSize: totalLength, chunks: this.audioBuffer.length }, 'Audio buffer updated');
 
     if (this.silenceTimer) {
       clearTimeout(this.silenceTimer);
     }
 
     this.silenceTimer = setTimeout(() => {
-      logger.debug('Utterance ended (silence detected)');
+      logger.info('Utterance ended (silence detected)');
       this.emit('utteranceEnd');
     }, this.SILENCE_THRESHOLD_MS);
   }
@@ -54,6 +56,7 @@ export class OpenAISttService extends EventEmitter {
     const totalLength = this.audioBuffer.reduce((sum, buf) => sum + buf.length, 0);
 
     if (totalLength < this.MIN_AUDIO_LENGTH) {
+      logger.debug({ totalLength, minRequired: this.MIN_AUDIO_LENGTH }, 'Buffer too small, waiting for more audio');
       return;
     }
 
@@ -61,12 +64,17 @@ export class OpenAISttService extends EventEmitter {
     const audioToProcess = Buffer.concat(this.audioBuffer);
     this.audioBuffer = [];
 
+    logger.info({ audioLength: audioToProcess.length }, 'Processing audio buffer with OpenAI');
+
     try {
       const transcript = await this.transcribeAudio(audioToProcess);
 
+      logger.info({ transcript, length: transcript?.length }, 'Received transcript from OpenAI');
+
       if (transcript && transcript.trim()) {
-        logger.debug({ transcript }, 'Received transcript from OpenAI');
         this.emit('transcript', transcript);
+      } else {
+        logger.warn('Empty transcript received from OpenAI');
       }
     } catch (error) {
       logger.error({ error }, 'OpenAI transcription error');
