@@ -14,6 +14,10 @@ export class DeepgramService extends EventEmitter {
 
   async startTranscription(): Promise<void> {
     try {
+      const hasApiKey = !!env.DEEPGRAM_API_KEY;
+      const keyPrefix = env.DEEPGRAM_API_KEY?.substring(0, 10);
+      logger.info({ hasApiKey, keyPrefix }, 'Starting Deepgram connection');
+
       this.connection = this.deepgram.listen.live({
         model: 'nova-2',
         language: 'en-US',
@@ -46,7 +50,13 @@ export class DeepgramService extends EventEmitter {
       });
 
       this.connection.on(LiveTranscriptionEvents.Error, (error: any) => {
-        logger.error({ error }, 'Deepgram error');
+        logger.error({
+          error,
+          message: error?.message,
+          type: error?.type,
+          description: error?.description,
+          code: error?.code
+        }, 'Deepgram error');
         this.emit('error', error);
       });
 
