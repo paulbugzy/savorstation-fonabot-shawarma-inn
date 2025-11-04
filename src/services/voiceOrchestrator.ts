@@ -55,8 +55,7 @@ export class VoiceOrchestrator {
         'Call started'
       );
 
-      await this.sttService.startTranscription();
-
+      // Register event listeners BEFORE starting transcription
       this.sttService.on('transcript', (transcript: string) => {
         this.handleTranscript(transcript);
       });
@@ -93,6 +92,9 @@ export class VoiceOrchestrator {
           `${env.STT_PROVIDER} STT error`
         );
       });
+
+      // Start transcription after all listeners are registered
+      await this.sttService.startTranscription();
 
       this.twilioWs.on('close', () => {
         this.handleCallEnd();
