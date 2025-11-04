@@ -95,18 +95,16 @@ class SessionManager {
 
     const updatedSession = { ...currentSession, ...updates };
 
-    const { error } = await this.supabase
-      .from('call_sessions')
-      .update({
-        session_data: updatedSession,
-        conversation_history: updatedSession.conversationHistory,
-        order_type: updatedSession.orderType,
-        branch_id: updatedSession.branchId,
-        customer_id: updatedSession.customerId,
-        address_id: updatedSession.addressId,
-        updated_at: new Date().toISOString(),
-      })
-      .eq('call_sid', callSid);
+    // Use raw SQL to avoid PostgREST schema cache issues
+    const { error } = await this.supabase.rpc('update_call_session', {
+      p_call_sid: callSid,
+      p_session_data: updatedSession,
+      p_conversation_history: updatedSession.conversationHistory,
+      p_order_type: updatedSession.orderType || null,
+      p_branch_id: updatedSession.branchId || null,
+      p_customer_id: updatedSession.customerId || null,
+      p_address_id: updatedSession.addressId || null,
+    });
 
     if (error) {
       logger.error({ error, callSid }, 'Failed to update session in Supabase');
