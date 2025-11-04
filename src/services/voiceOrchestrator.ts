@@ -171,6 +171,22 @@ export class VoiceOrchestrator {
         });
         this.twilioWs.send(clearMessage);
       }
+
+      // Clear any pending utterance timeout
+      if (this.utteranceTimeout) {
+        clearTimeout(this.utteranceTimeout);
+        this.utteranceTimeout = null;
+      }
+
+      // Start fresh buffer with the interruption
+      this.transcriptBuffer = transcript;
+
+      // Set shorter timeout for interruptions (feel more responsive)
+      this.utteranceTimeout = setTimeout(() => {
+        this.processTranscript();
+      }, 1000);
+
+      return;
     }
 
     this.transcriptBuffer += ' ' + transcript;
