@@ -10,9 +10,10 @@ export class OpenAISttService extends EventEmitter {
   private isProcessing = false;
   private processTimer: NodeJS.Timeout | null = null;
   private silenceTimer: NodeJS.Timeout | null = null;
-  private readonly PROCESS_INTERVAL_MS = 2000;
-  private readonly SILENCE_THRESHOLD_MS = 1500;
-  private readonly MIN_AUDIO_LENGTH = 4000;
+  private readonly PROCESS_INTERVAL_MS = 1500;
+  private readonly SILENCE_THRESHOLD_MS = 1200;
+  private readonly MIN_AUDIO_LENGTH = 8000;
+  private readonly MAX_AUDIO_LENGTH = 100000;
 
   constructor() {
     super();
@@ -59,8 +60,12 @@ export class OpenAISttService extends EventEmitter {
     const totalLength = this.audioBuffer.reduce((sum, buf) => sum + buf.length, 0);
 
     if (totalLength < this.MIN_AUDIO_LENGTH) {
-      logger.debug({ totalLength, minRequired: this.MIN_AUDIO_LENGTH }, 'Buffer too small, waiting for more audio');
       return;
+    }
+
+    // Cap the audio length to avoid timeouts
+    if (totalLength > this.MAX_AUDIO_LENGTH) {
+      logger.info({ totalLength, max: this.MAX_AUDIO_LENGTH }, 'Buffer exceeds max length, processing now');
     }
 
     this.isProcessing = true;
@@ -87,9 +92,11 @@ export class OpenAISttService extends EventEmitter {
     }
   }
 
-  private async transcribeAudio(audioBuffer: Buffer): Promise<string> {
+  private async transcribeAudio(audioBuffer: Buffer, retries = 2): Promise<string> {
     try {
       const wavBuffer = this.convertMulawToWav(audioBuffer);
+
+      logger.info({ wavSize: wavBuffer.length, originalSize: audioBuffer.length }, 'Converting audio to WAV');
 
       const file = new File([wavBuffer], 'audio.wav', { type: 'audio/wav' });
 
@@ -101,8 +108,13 @@ export class OpenAISttService extends EventEmitter {
       });
 
       return typeof transcription === 'string' ? transcription : '';
-    } catch (error) {
-      logger.error({ error }, 'Failed to transcribe audio with OpenAI');
+    } catch (error: any) {
+      if (retries > 0 && (error?.code === 'ECONNRESET' || error?.cause?.code === 'ECONNRESET')) {
+        logger.warn({ retriesLeft: retries, error: error?.message }, 'Retrying OpenAI transcription');
+        await new Promise(resolve => setTimeout(resolve, 500));
+        return this.transcribeAudio(audioBuffer, retries - 1);
+      }
+      logger.error({ error, code: error?.code, cause: error?.cause }, 'Failed to transcribe audio with OpenAI');
       throw error;
     }
   }
