@@ -8,6 +8,7 @@ services:
     environment:
       - NODE_ENV=${NODE_ENV:-production}
       - PORT=${PORT:-8080}
+      - STT_PROVIDER=${STT_PROVIDER:-deepgram}
       - PUBLIC_URL=${PUBLIC_URL}
       - BACKEND_BASE_URL=${BACKEND_BASE_URL}
       - BACKEND_EMAIL=${BACKEND_EMAIL}
