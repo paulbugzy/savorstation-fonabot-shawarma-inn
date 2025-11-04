@@ -20,10 +20,6 @@ export class DeepgramService extends EventEmitter {
       wsUrl.searchParams.set('model', 'flux-general-en');
       wsUrl.searchParams.set('encoding', 'mulaw');
       wsUrl.searchParams.set('sample_rate', '8000');
-      wsUrl.searchParams.set('channels', '1');
-      wsUrl.searchParams.set('smart_format', 'true');
-      wsUrl.searchParams.set('punctuate', 'true');
-      wsUrl.searchParams.set('interim_results', 'false');
 
       logger.info({ url: wsUrl.toString() }, 'Connecting to Deepgram Flux');
 
