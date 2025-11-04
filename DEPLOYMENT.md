@@ -13,7 +13,7 @@ nano .env  # or use your preferred editor
 
 **Critical environment variables to configure:**
 
-- `PUBLIC_URL` - Your public HTTPS domain (e.g., `https://voice.shawarma-inn.com`)
+- `PUBLIC_URL` - Your publi c HTTPS domain (e.g., `https://voice.shawarma-inn.com`)
 - `BACKEND_BASE_URL` - Laravel API URL
 - `BACKEND_EMAIL` and `BACKEND_PASSWORD` - Laravel service account credentials
 - `TWILIO_ACCOUNT_SID` and `TWILIO_AUTH_TOKEN` - From Twilio console
