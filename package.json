@@ -14,11 +14,18 @@
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\""
   },
-  "keywords": ["voice", "ai", "twilio", "deepgram", "elevenlabs", "openai"],
+  "keywords": [
+    "voice",
+    "ai",
+    "twilio",
+    "deepgram",
+    "elevenlabs",
+    "openai"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@deepgram/sdk": "^3.4.0",
+    "@deepgram/sdk": "^4.11.2",
     "@supabase/supabase-js": "^2.39.7",
     "axios": "^1.6.7",
     "dotenv": "^16.4.5",
