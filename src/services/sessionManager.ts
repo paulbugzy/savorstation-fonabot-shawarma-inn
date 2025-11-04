@@ -95,20 +95,41 @@ class SessionManager {
 
     const updatedSession = { ...currentSession, ...updates };
 
-    // Use raw SQL to avoid PostgREST schema cache issues
-    const { error } = await this.supabase.rpc('update_call_session', {
-      p_call_sid: callSid,
-      p_session_data: updatedSession,
-      p_conversation_history: updatedSession.conversationHistory,
-      p_order_type: updatedSession.orderType || null,
-      p_branch_id: updatedSession.branchId || null,
-      p_customer_id: updatedSession.customerId || null,
-      p_address_id: updatedSession.addressId || null,
-    });
+    // Update only the JSONB columns that PostgREST knows about
+    const { error } = await this.supabase
+      .from('call_sessions')
+      .update({
+        session_data: updatedSession,
+        conversation_history: updatedSession.conversationHistory,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('call_sid', callSid);
 
     if (error) {
       logger.error({ error, callSid }, 'Failed to update session in Supabase');
       throw new Error('Failed to update session');
+    }
+
+    // Then update the individual columns using the stored procedure
+    if (
+      updatedSession.orderType !== undefined ||
+      updatedSession.branchId !== undefined ||
+      updatedSession.customerId !== undefined ||
+      updatedSession.addressId !== undefined
+    ) {
+      const { error: rpcError } = await this.supabase.rpc('update_call_session', {
+        p_call_sid: callSid,
+        p_session_data: updatedSession,
+        p_conversation_history: updatedSession.conversationHistory,
+        p_order_type: updatedSession.orderType || null,
+        p_branch_id: updatedSession.branchId || null,
+        p_customer_id: updatedSession.customerId || null,
+        p_address_id: updatedSession.addressId || null,
+      });
+
+      if (rpcError) {
+        logger.warn({ error: rpcError, callSid }, 'RPC update failed, but main update succeeded');
+      }
     }
 
     logger.debug({ callSid }, 'Updated session');

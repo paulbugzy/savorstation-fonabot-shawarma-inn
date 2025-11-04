@@ -388,6 +388,12 @@ export class VoiceOrchestrator {
       const chunks = this.chunkAudio(base64Audio, 8192);
 
       for (const chunk of chunks) {
+        // Check if user interrupted before sending each chunk
+        if (!this.isSpeaking) {
+          logger.info({ callSid: this.callSid }, 'Speech interrupted, stopping audio playback');
+          break;
+        }
+
         const message = JSON.stringify({
           event: 'media',
           streamSid: this.streamSid,

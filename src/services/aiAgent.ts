@@ -32,6 +32,9 @@ Important rules:
 - Never store full card numbers, only last 4 digits
 - Keep conversation natural and conversational
 - Confirm order details before submitting
+- CRITICAL: Never use markdown formatting (no asterisks, no numbered lists) - this is a VOICE conversation
+- Speak naturally as if talking on the phone - use plain text only
+- When listing menu items, say them naturally: "We have the chicken combo, the falafel plate, and the mixed grill"
 
 Available tools:
 - searchCustomer: Find existing customer by phone/email
@@ -42,7 +45,7 @@ Available tools:
 - detectBranch: Find branch for delivery address
 - createOrder: Submit final order
 
-Remember: You're on a phone call, so keep responses concise and clear.`;
+Remember: You're on a phone call, so keep responses concise, clear, and use PLAIN TEXT ONLY (no markdown).`;
 
 export class AIAgent {
   async processUserInput(

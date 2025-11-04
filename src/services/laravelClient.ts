@@ -135,6 +135,7 @@ class LaravelClient {
       return '+1';
     }
 
+    // If more than 10 digits, extract country code from prefix
     if (digits.length > 10) {
       const dialCode = digits.slice(0, digits.length - 10);
       if (dialCode.length) {
@@ -142,8 +143,8 @@ class LaravelClient {
       }
     }
 
-    const defaultCode = digits.slice(0, Math.min(3, digits.length)) || '1';
-    return `+${defaultCode}`;
+    // Default to +1 for 10-digit US/Canada numbers
+    return '+1';
   }
 
   private generateTemporaryPassword(): string {
