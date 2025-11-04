@@ -67,12 +67,10 @@ export class VoiceOrchestrator {
 
       this.sttService.on('ready', () => {
         this.sttReady = true;
-        if (this.pendingAudio.length) {
-          logger.debug(
-            { callSid: this.callSid, bufferedChunks: this.pendingAudio.length },
-            `Flushing buffered audio to ${env.STT_PROVIDER} STT`
-          );
-        }
+        logger.info(
+          { callSid: this.callSid, bufferedChunks: this.pendingAudio.length },
+          `STT ready, flushing buffered audio to ${env.STT_PROVIDER}`
+        );
         while (this.pendingAudio.length) {
           const chunk = this.pendingAudio.shift();
           if (chunk) {
@@ -137,6 +135,12 @@ export class VoiceOrchestrator {
               this.sttService.sendAudio(audioBuffer);
             } else {
               this.pendingAudio.push(audioBuffer);
+              if (this.pendingAudio.length % 50 === 0) {
+                logger.info(
+                  { callSid: this.callSid, bufferedChunks: this.pendingAudio.length },
+                  'Audio buffering (STT not ready yet)'
+                );
+              }
             }
           }
           break;

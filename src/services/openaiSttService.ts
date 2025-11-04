@@ -36,7 +36,10 @@ export class OpenAISttService extends EventEmitter {
   sendAudio(audioData: Buffer): void {
     this.audioBuffer.push(audioData);
     const totalLength = this.audioBuffer.reduce((sum, buf) => sum + buf.length, 0);
-    logger.debug({ bufferSize: totalLength, chunks: this.audioBuffer.length }, 'Audio buffer updated');
+
+    if (this.audioBuffer.length % 100 === 0) {
+      logger.info({ bufferSize: totalLength, chunks: this.audioBuffer.length }, 'Audio buffer status');
+    }
 
     if (this.silenceTimer) {
       clearTimeout(this.silenceTimer);
