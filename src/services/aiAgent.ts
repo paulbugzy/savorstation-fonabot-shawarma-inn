@@ -125,6 +125,14 @@ export class AIAgent {
       { role: 'system', content: SYSTEM_PROMPT },
     ];
 
+    logger.debug(
+      {
+        callSid: session.callSid,
+        conversationHistoryLength: session.conversationHistory.length,
+      },
+      'Building messages with conversation history'
+    );
+
     messages.push(
       ...session.conversationHistory.map((msg) => ({
         role: msg.role,

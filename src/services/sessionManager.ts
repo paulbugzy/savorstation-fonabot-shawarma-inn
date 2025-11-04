@@ -68,7 +68,7 @@ class SessionManager {
   async getSession(callSid: string): Promise<CallSession | null> {
     const { data, error } = await this.supabase
       .from('call_sessions')
-      .select('session_data')
+      .select('session_data, conversation_history')
       .eq('call_sid', callSid)
       .maybeSingle();
 
@@ -81,7 +81,10 @@ class SessionManager {
       return null;
     }
 
-    return data.session_data as CallSession;
+    const session = data.session_data as CallSession;
+    // Override with the latest conversation history from the dedicated column
+    session.conversationHistory = data.conversation_history || [];
+    return session;
   }
 
   async updateSession(callSid: string, updates: Partial<CallSession>): Promise<void> {
