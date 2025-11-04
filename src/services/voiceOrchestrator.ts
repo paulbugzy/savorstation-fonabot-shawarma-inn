@@ -206,6 +206,14 @@ export class VoiceOrchestrator {
 
     await sessionManager.addConversationMessage(this.callSid, 'user', userMessage);
 
+    // Refresh session from database to get updated conversation history
+    const freshSession = await sessionManager.getSession(this.callSid);
+    if (!freshSession) {
+      logger.error({ callSid: this.callSid }, 'Session not found after adding message');
+      return;
+    }
+    this.session = freshSession;
+
     try {
       const { response, updates } = await aiAgent.processUserInput(
         this.session,

@@ -66,8 +66,8 @@ export class AIAgent {
         messages,
         tools: this.getTools(),
         tool_choice: 'auto',
-        temperature: 0.7,
-        max_tokens: 500,
+        temperature: 0.3,
+        max_tokens: 200,
       });
 
       logger.info({
@@ -97,8 +97,8 @@ export class AIAgent {
               content: JSON.stringify(updates[idx]),
             })),
           ],
-          temperature: 0.7,
-          max_tokens: 500,
+          temperature: 0.3,
+          max_tokens: 150,
         });
 
         return {
