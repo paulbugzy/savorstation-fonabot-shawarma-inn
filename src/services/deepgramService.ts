@@ -18,7 +18,14 @@ export class DeepgramService extends EventEmitter {
       const keyPrefix = env.DEEPGRAM_API_KEY?.substring(0, 10);
       logger.info({ hasApiKey, keyPrefix }, 'Starting Deepgram Flux connection');
 
-      this.connection = (this.deepgram.listen as any).v2.live({
+      const listenClient = this.deepgram.listen as any;
+      logger.info({ hasV2: !!listenClient.v2, listenKeys: Object.keys(listenClient) }, 'Deepgram listen client inspection');
+
+      if (!listenClient.v2) {
+        throw new Error('Deepgram SDK does not support v2 API');
+      }
+
+      this.connection = listenClient.v2.live({
         model: 'flux-general-en',
         smart_format: true,
         punctuate: true,
@@ -62,7 +69,11 @@ export class DeepgramService extends EventEmitter {
         this.emit('close');
       });
     } catch (error) {
-      logger.error({ error }, 'Failed to start Deepgram transcription');
+      logger.error({
+        error,
+        message: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
+      }, 'Failed to start Deepgram transcription');
       throw error;
     }
   }
