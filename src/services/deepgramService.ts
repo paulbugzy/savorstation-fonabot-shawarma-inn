@@ -16,16 +16,13 @@ export class DeepgramService extends EventEmitter {
     try {
       const hasApiKey = !!env.DEEPGRAM_API_KEY;
       const keyPrefix = env.DEEPGRAM_API_KEY?.substring(0, 10);
-      logger.info({ hasApiKey, keyPrefix }, 'Starting Deepgram connection');
+      logger.info({ hasApiKey, keyPrefix }, 'Starting Deepgram Flux connection');
 
       this.connection = this.deepgram.listen.live({
-        model: 'nova-2',
-        language: 'en-US',
+        model: 'flux-general-en',
         smart_format: true,
         punctuate: true,
         interim_results: false,
-        utterance_end_ms: 1000,
-        vad_events: true,
         encoding: 'mulaw',
         sample_rate: 8000,
         channels: 1,
